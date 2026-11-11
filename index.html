@@ -22,12 +22,11 @@
             border-radius: 8px;
             pointer-events: none;
             z-index: 10;
-            font-size: 14px;
+            font-size: 13px;
+            line-height: 1.5;
         }
         #joystick-container {
             position: absolute;
-            bottom: 40px;
-            left: 40px;
             width: 120px;
             height: 120px;
             background: rgba(255, 255, 255, 0.15);
@@ -105,20 +104,15 @@
             border-radius: 50px;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
         }
         #start-btn:active {
             transform: scale(0.95);
         }
         @media (pointer: fine) {
-            #joystick-container, #jump-btn {
-                display: none !important;
-            }
+            #joystick-container, #jump-btn { display: none !important; }
         }
         @media (pointer: coarse) {
-            #joystick-container, #jump-btn {
-                display: flex;
-            }
+            #joystick-container, #jump-btn { display: flex; }
         }
         #loading {
             position: absolute;
@@ -145,7 +139,11 @@
     </div>
     <div id="jump-btn">JUMP</div>
 
-    <div id="info">WASD - движение | Space - прыжок | Колесо мыши - зум</div>
+    <div id="info">
+        WASD - движение | Space - прыжок<br>
+        ПКМ + мышь - вращение камеры | Колесо - зум<br>
+        Моб.: свайп - камера | Щипок - зум
+    </div>
     <div id="loading">Загрузка модели...</div>
 
     <script type="importmap">
@@ -166,13 +164,17 @@
         let model;
         let mixer;
 
-        // --- Параметры камеры (для зума) ---
-        const cameraParams = {
-            minDistance: 3,      // Ближайший зум
-            maxDistance: 15,     // Дальний зум
-            distance: 6,         // Текущая дистанция (стартуем поближе)
-            height: 3,           // Высота камеры относительно игрока
-            lerpSpeed: 0.12      // Плавность следования
+        // --- Параметры камеры (орбитальная, как в Roblox) ---
+        const camParams = {
+            distance: 6,          // текущая дистанция
+            minDistance: 0.6,     // почти первое лицо
+            maxDistance: 18,      // максимальное отдаление
+            yaw: Math.PI,         // горизонтальный угол (по умолчанию смотрит сзади)
+            pitch: 0.35,          // вертикальный угол (наклон сверху вниз)
+            minPitch: -1.2,       // насколько можно опустить камеру вниз (посмотреть вверх)
+            maxPitch: 1.35,       // насколько поднять камеру (смотреть сверху)
+            targetHeight: 1.4,    // высота точки, вокруг которой вращаемся (примерно голова)
+            lerpSpeed: 0.15       // плавность
         };
 
         const playerState = {
@@ -196,17 +198,29 @@
         const jumpBtn = document.getElementById('jump-btn');
         let jumpBtnPressed = false;
 
-        // --- Переменные для pinch-зума ---
+        // Касания для свайпа и pinch-зума
         const activeTouches = new Map();
         let lastPinchDistance = null;
+
+        // Для ПК: вращение правой кнопкой мыши
+        let isMouseRotating = false;
+        let lastMouseX = 0, lastMouseY = 0;
+
+        // Для мобильного свайпа камеры
+        let cameraTouchId = null;
+        let lastCameraTouchX = 0, lastCameraTouchY = 0;
+
+        // Временные векторы
+        const _camOffset = new THREE.Vector3();
+        const _lookTarget = new THREE.Vector3();
+        const _targetCamPos = new THREE.Vector3();
 
         function initScene() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x666666);
             scene.fog = new THREE.Fog(0x666666, 20, 100);
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 5, 10);
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 1000);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -214,8 +228,8 @@
             renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
+            // Свет
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
             const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
             dirLight.position.set(5, 10, 7);
@@ -287,7 +301,7 @@
         }
 
         function setupControls() {
-            // Клавиатура
+            // --- Клавиатура ---
             window.addEventListener('keydown', (e) => {
                 switch(e.code) {
                     case 'KeyW': keys.w = true; break;
@@ -309,50 +323,74 @@
 
             const canvas = renderer.domElement;
 
-            // --- Зум колесиком мыши (ПК) ---
+            // --- ПК: вращение камеры правой кнопкой мыши ---
+            canvas.addEventListener('mousedown', (e) => {
+                if (e.button === 2) { // правая кнопка
+                    isMouseRotating = true;
+                    lastMouseX = e.clientX;
+                    lastMouseY = e.clientY;
+                    e.preventDefault();
+                }
+            });
+            window.addEventListener('mouseup', (e) => {
+                if (e.button === 2) isMouseRotating = false;
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!isMouseRotating) return;
+                const dx = e.clientX - lastMouseX;
+                const dy = e.clientY - lastMouseY;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+
+                const sensitivity = 0.005;
+                camParams.yaw -= dx * sensitivity;
+                camParams.pitch += dy * sensitivity;
+                camParams.pitch = Math.max(camParams.minPitch, Math.min(camParams.maxPitch, camParams.pitch));
+            });
+            // Отключаем контекстное меню на канвасе (иначе ПКМ вызывает меню браузера)
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // --- Зум колесиком мыши ---
             canvas.addEventListener('wheel', (e) => {
                 e.preventDefault();
-                const zoomStep = 0.8;
+                const zoomStep = 0.9;
                 if (e.deltaY > 0) {
-                    cameraParams.distance = Math.min(cameraParams.maxDistance, cameraParams.distance + zoomStep);
+                    camParams.distance = Math.min(camParams.maxDistance, camParams.distance + zoomStep);
                 } else {
-                    cameraParams.distance = Math.max(cameraParams.minDistance, cameraParams.distance - zoomStep);
+                    camParams.distance = Math.max(camParams.minDistance, camParams.distance - zoomStep);
                 }
             }, { passive: false });
 
-            // --- Касания ---
+            // --- Мобильные касания ---
             canvas.addEventListener('touchstart', (e) => {
                 for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    activeTouches.set(touch.identifier, { x: touch.clientX, y: touch.clientY });
+                    const t = e.changedTouches[i];
+                    activeTouches.set(t.identifier, { x: t.clientX, y: t.clientY });
                 }
 
-                // Если два пальца — это pinch-зум, отключаем джойстик
+                // Pinch-зум (2+ пальца) — отменяем джойстик и свайп камеры
                 if (activeTouches.size >= 2) {
-                    if (joystickActive) {
-                        joystickActive = false;
-                        joystickTouchId = null;
-                        joystickInput = { x: 0, y: 0 };
-                        joystickContainer.style.display = 'none';
-                        joystickKnob.style.transform = `translate(-50%, -50%)`;
-                    }
-                    // Инициализируем начальную дистанцию
+                    cancelJoystick();
+                    cameraTouchId = null;
                     lastPinchDistance = getPinchDistance();
                     e.preventDefault();
                     return;
                 }
 
-                // Иначе — обычный джойстик (левая половина)
+                // Один палец
                 for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    if (!joystickActive && touch.clientX < window.innerWidth / 2) {
+                    const t = e.changedTouches[i];
+                    // Если касание в левой нижней четверти — джойстик
+                    const inLeftBottom = t.clientX < window.innerWidth * 0.45 &&
+                                         t.clientY > window.innerHeight * 0.45;
+                    if (!joystickActive && inLeftBottom) {
                         joystickActive = true;
-                        joystickTouchId = touch.identifier;
-
+                        joystickTouchId = t.identifier;
                         joystickContainer.style.display = 'block';
-                        joystickContainer.style.left = (touch.clientX - 60) + 'px';
-                        joystickContainer.style.bottom = 'auto';
-                        joystickContainer.style.top = (touch.clientY - 60) + 'px';
+                        // Фиксируем джойстик в углу (чтобы было удобно)
+                        joystickContainer.style.left = '40px';
+                        joystickContainer.style.bottom = '40px';
+                        joystickContainer.style.top = 'auto';
 
                         const rect = joystickContainer.getBoundingClientRect();
                         joystickCenter.x = rect.left + rect.width / 2;
@@ -361,12 +399,17 @@
                         joystickKnob.style.transform = `translate(-50%, -50%)`;
                         joystickInput = { x: 0, y: 0 };
                         e.preventDefault();
+                    } else if (cameraTouchId === null) {
+                        // Иначе — свайп камеры
+                        cameraTouchId = t.identifier;
+                        lastCameraTouchX = t.clientX;
+                        lastCameraTouchY = t.clientY;
                     }
                 }
             }, { passive: false });
 
             canvas.addEventListener('touchmove', (e) => {
-                // Обновляем позиции активных касаний
+                // Обновляем позиции
                 for (let i = 0; i < e.changedTouches.length; i++) {
                     const t = e.changedTouches[i];
                     if (activeTouches.has(t.identifier)) {
@@ -379,25 +422,22 @@
                     const dist = getPinchDistance();
                     if (lastPinchDistance !== null) {
                         const delta = dist - lastPinchDistance;
-                        // Чем больше раздвигаем — тем дальше камера
-                        cameraParams.distance -= delta * 0.02;
-                        cameraParams.distance = Math.max(
-                            cameraParams.minDistance,
-                            Math.min(cameraParams.maxDistance, cameraParams.distance)
-                        );
+                        camParams.distance -= delta * 0.02;
+                        camParams.distance = Math.max(camParams.minDistance, Math.min(camParams.maxDistance, camParams.distance));
                     }
                     lastPinchDistance = dist;
                     e.preventDefault();
                     return;
                 }
 
-                // Движение джойстика
-                if (!joystickActive) return;
+                // Обработка движений
                 for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    if (touch.identifier === joystickTouchId) {
-                        let deltaX = touch.clientX - joystickCenter.x;
-                        let deltaY = touch.clientY - joystickCenter.y;
+                    const t = e.changedTouches[i];
+
+                    // Джойстик
+                    if (joystickActive && t.identifier === joystickTouchId) {
+                        let deltaX = t.clientX - joystickCenter.x;
+                        let deltaY = t.clientY - joystickCenter.y;
                         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                         if (distance > joystickRadius) {
                             deltaX = (deltaX / distance) * joystickRadius;
@@ -408,6 +448,20 @@
                         joystickKnob.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
                         e.preventDefault();
                     }
+
+                    // Свайп камеры
+                    if (t.identifier === cameraTouchId) {
+                        const dx = t.clientX - lastCameraTouchX;
+                        const dy = t.clientY - lastCameraTouchY;
+                        lastCameraTouchX = t.clientX;
+                        lastCameraTouchY = t.clientY;
+
+                        const sensitivity = 0.006;
+                        camParams.yaw -= dx * sensitivity;
+                        camParams.pitch += dy * sensitivity;
+                        camParams.pitch = Math.max(camParams.minPitch, Math.min(camParams.maxPitch, camParams.pitch));
+                        e.preventDefault();
+                    }
                 }
             }, { passive: false });
 
@@ -416,23 +470,20 @@
                     const t = e.changedTouches[i];
                     activeTouches.delete(t.identifier);
 
-                    if (joystickActive && t.identifier === joystickTouchId) {
-                        joystickActive = false;
-                        joystickTouchId = null;
-                        joystickInput = { x: 0, y: 0 };
-                        joystickContainer.style.display = 'none';
-                        joystickKnob.style.transform = `translate(-50%, -50%)`;
+                    if (t.identifier === joystickTouchId) {
+                        cancelJoystick();
+                    }
+                    if (t.identifier === cameraTouchId) {
+                        cameraTouchId = null;
                     }
                 }
-                if (activeTouches.size < 2) {
-                    lastPinchDistance = null;
-                }
+                if (activeTouches.size < 2) lastPinchDistance = null;
             };
 
             canvas.addEventListener('touchend', endTouch);
             canvas.addEventListener('touchcancel', endTouch);
 
-            // Кнопка прыжка
+            // --- Кнопка прыжка ---
             jumpBtn.addEventListener('touchstart', (e) => {
                 jumpBtnPressed = true;
                 e.preventDefault();
@@ -454,6 +505,14 @@
             jumpBtn.addEventListener('mouseleave', () => { jumpBtnPressed = false; });
         }
 
+        function cancelJoystick() {
+            joystickActive = false;
+            joystickTouchId = null;
+            joystickInput = { x: 0, y: 0 };
+            joystickContainer.style.display = 'none';
+            joystickKnob.style.transform = `translate(-50%, -50%)`;
+        }
+
         function getPinchDistance() {
             const touches = Array.from(activeTouches.values());
             if (touches.length < 2) return 0;
@@ -465,34 +524,54 @@
         function updatePlayer(deltaTime) {
             if (!player) return;
 
-            let moveX = 0;
-            let moveZ = 0;
+            // --- Ввод в локальных координатах камеры ---
+            // W/S — вперёд/назад относительно направления камеры по горизонтали
+            // A/D — влево/вправо относительно камеры
+            let inputForward = 0;
+            let inputRight = 0;
 
-            if (keys.w) moveZ -= 1;
-            if (keys.s) moveZ += 1;
-            if (keys.a) moveX -= 1;
-            if (keys.d) moveX += 1;
+            if (keys.w) inputForward += 1;
+            if (keys.s) inputForward -= 1;
+            if (keys.d) inputRight += 1;
+            if (keys.a) inputRight -= 1;
 
-            if (Math.abs(joystickInput.x) > 0.1) moveX += joystickInput.x;
-            if (Math.abs(joystickInput.y) > 0.1) moveZ += joystickInput.y;
+            // Джойстик: y вверх = -1 (вперёд), x вправо = +1 (вправо)
+            if (Math.abs(joystickInput.y) > 0.1) inputForward += -joystickInput.y;
+            if (Math.abs(joystickInput.x) > 0.1) inputRight += joystickInput.x;
 
-            const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
-            if (length > 1) {
-                moveX /= length;
-                moveZ /= length;
+            // Нормализация
+            const len = Math.sqrt(inputForward * inputForward + inputRight * inputRight);
+            if (len > 1) {
+                inputForward /= len;
+                inputRight /= len;
             }
 
-            const speed = playerState.speed;
-            player.position.x += moveX * speed * deltaTime;
-            player.position.z += moveZ * speed * deltaTime;
+            // Направление "вперёд" по горизонтали, исходя из yaw камеры
+            // Камера смотрит на игрока с направлением (sin(yaw), cos(yaw)) — значит "вперёд" от игрока = -(sin, cos)
+            // Проще: вектор от камеры к игроку — это направление взгляда. Используем его для движения.
+            const forwardX = -Math.sin(camParams.yaw);
+            const forwardZ = -Math.cos(camParams.yaw);
+            // Вправо относительно камеры
+            const rightX = Math.cos(camParams.yaw);
+            const rightZ = -Math.sin(camParams.yaw);
 
-            // Поворот в сторону движения
-            if (length > 0.1) {
+            const moveX = forwardX * inputForward + rightX * inputRight;
+            const moveZ = forwardZ * inputForward + rightZ * inputRight;
+
+            const moveLen = Math.sqrt(moveX * moveX + moveZ * moveZ);
+
+            // Применяем скорость
+            if (moveLen > 0.001) {
+                const speed = playerState.speed;
+                player.position.x += moveX * speed * deltaTime;
+                player.position.z += moveZ * speed * deltaTime;
+
+                // Поворот персонажа в сторону движения
                 const targetAngle = Math.atan2(moveX, moveZ);
                 let angleDiff = targetAngle - player.rotation.y;
                 while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
                 while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-                player.rotation.y += angleDiff * Math.min(1, deltaTime * 10);
+                player.rotation.y += angleDiff * Math.min(1, deltaTime * 12);
             }
 
             // Ограничение по платформе
@@ -500,33 +579,40 @@
             player.position.x = Math.max(-limit, Math.min(limit, player.position.x));
             player.position.z = Math.max(-limit, Math.min(limit, player.position.z));
 
-            // Прыжок
+            // --- Прыжок ---
             const jumpPressed = keys.space || jumpBtnPressed;
             if (jumpPressed && playerState.onGround) {
                 playerState.velocity.y = playerState.jumpForce;
                 playerState.onGround = false;
             }
-
             playerState.velocity.y -= playerState.gravity * deltaTime;
             player.position.y += playerState.velocity.y * deltaTime;
-
             if (player.position.y <= 0) {
                 player.position.y = 0;
                 playerState.velocity.y = 0;
                 playerState.onGround = true;
             }
 
-            // --- Камера ---
-            // Смещение камеры относительно игрока с учётом дистанции и высоты
-            // Камера всегда находится за спиной игрока (по направлению взгляда персонажа)
-            const offset = new THREE.Vector3(0, cameraParams.height, cameraParams.distance);
-            const rotatedOffset = offset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
-            const targetCameraPos = player.position.clone().add(rotatedOffset);
+            // --- Орбитальная камера ---
+            // Точка вращения — немного выше центра игрока
+            _lookTarget.copy(player.position);
+            _lookTarget.y += camParams.targetHeight;
 
-            camera.position.lerp(targetCameraPos, cameraParams.lerpSpeed);
+            // Смещение камеры по сфере (yaw, pitch)
+            const cosPitch = Math.cos(camParams.pitch);
+            const sinPitch = Math.sin(camParams.pitch);
 
-            const lookAtTarget = player.position.clone().add(new THREE.Vector3(0, 1.2, 0));
-            camera.lookAt(lookAtTarget);
+            _camOffset.set(
+                Math.sin(camParams.yaw) * cosPitch,
+                sinPitch,
+                Math.cos(camParams.yaw) * cosPitch
+            ).multiplyScalar(camParams.distance);
+
+            _targetCamPos.copy(_lookTarget).add(_camOffset);
+
+            // Плавное следование
+            camera.position.lerp(_targetCamPos, camParams.lerpSpeed);
+            camera.lookAt(_lookTarget);
 
             if (mixer) mixer.update(deltaTime);
         }
