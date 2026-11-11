@@ -15,7 +15,6 @@
             user-select: none;
             -webkit-user-select: none;
         }
-
         .mi {
             font-family: 'Material Icons';
             font-weight: normal;
@@ -34,7 +33,6 @@
             pointer-events: none;
         }
 
-        /* Стартовый экран */
         #start-screen {
             position: fixed;
             inset: 0;
@@ -64,7 +62,6 @@
         #start-btn:active { transform: scale(0.92); }
         #start-btn .mi { font-size: 48px; }
 
-        /* Джойстик */
         #joystick-container {
             position: absolute;
             width: 130px;
@@ -90,7 +87,6 @@
             pointer-events: none;
         }
 
-        /* Круглые кнопки действий */
         .action-btn {
             position: absolute;
             width: 75px;
@@ -113,6 +109,7 @@
         #jump-btn { bottom: 60px; right: 40px; }
         #fly-btn { bottom: 160px; right: 40px; }
         #delete-mode-btn { bottom: 260px; right: 40px; }
+        #delete-mode-btn.active { background: rgba(255, 90, 90, 0.6); border-color: #ff5a5a; }
 
         #settings-btn {
             position: absolute;
@@ -133,7 +130,6 @@
         }
         #settings-btn .mi { font-size: 26px; }
 
-        /* Панель настроек */
         #settings-panel {
             position: absolute;
             top: 80px;
@@ -172,22 +168,15 @@
         .setting-row label .mi { font-size: 18px; color: #7ecbff; }
         .setting-row .val { color: #7ecbff; font-variant-numeric: tabular-nums; }
         input[type="range"] {
-            width: 100%;
-            height: 4px;
-            -webkit-appearance: none;
-            appearance: none;
+            width: 100%; height: 4px;
+            -webkit-appearance: none; appearance: none;
             background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-            outline: none;
+            border-radius: 2px; outline: none;
         }
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #50c8ff;
-            cursor: pointer;
+            -webkit-appearance: none; appearance: none;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #50c8ff; cursor: pointer;
             box-shadow: 0 0 6px rgba(80,200,255,0.8);
         }
         input[type="range"]::-moz-range-thumb {
@@ -196,8 +185,7 @@
         }
 
         @media (pointer: fine) {
-            #joystick-container { display: none !important; }
-            #jump-btn, #fly-btn, #delete-mode-btn { display: none !important; }
+            #joystick-container, .action-btn { display: none !important; }
         }
         @media (pointer: coarse) {
             #joystick-container { display: block; }
@@ -219,10 +207,8 @@
 
         #crosshair {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 6px;
-            height: 6px;
+            top: 50%; left: 50%;
+            width: 6px; height: 6px;
             margin: -3px 0 0 -3px;
             background: rgba(255,255,255,0.7);
             border-radius: 50%;
@@ -231,63 +217,65 @@
             display: none;
         }
 
-        /* --- Корзина (кнопка удаления) --- */
-        #trash-btn {
+        /* --- Корзина для удаления --- */
+        #trash-bin {
             position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%) translateY(120px);
-            width: 70px;
-            height: 70px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.18);
-            border: 2px solid rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 250;
+            z-index: 300;
+            pointer-events: auto;
             cursor: pointer;
-            backdrop-filter: blur(3px);
-            transition: opacity 0.4s ease, transform 0.4s ease, background 0.25s ease, border-color 0.25s ease;
+            backdrop-filter: blur(4px);
             opacity: 0;
-            pointer-events: none;
+            transform: scale(0.6);
+            transition: opacity 0.35s ease, transform 0.35s ease, background 0.2s, border-color 0.2s;
             touch-action: manipulation;
         }
-        #trash-btn .mi {
-            font-size: 34px;
-            color: #eee;
-            transition: color 0.25s ease;
+        #trash-bin.visible { opacity: 1; transform: scale(1); }
+        #trash-bin .mi {
+            font-size: 32px;
+            color: rgba(255,255,255,0.9);
+            transition: color 0.2s;
         }
-        #trash-btn.visible {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-            pointer-events: auto;
+        #trash-bin:hover,
+        #trash-bin.hot {
+            background: rgba(255, 60, 60, 0.55);
+            border-color: #ff3c3c;
+            box-shadow: 0 0 18px rgba(255,60,60,0.7);
         }
-        #trash-btn.hot {
-            background: rgba(220, 40, 40, 0.7);
-            border-color: #ff4b4b;
+        #trash-bin:hover .mi,
+        #trash-bin.hot .mi {
+            color: #fff;
         }
-        #trash-btn.hot .mi { color: #fff; }
-        #trash-btn:active { transform: translateX(-50%) translateY(0) scale(0.92); }
 
-        /* Текст под корзиной (небольшой, опционально) */
-        #trash-label {
+        /* Индикатор режима удаления */
+        #delete-mode-indicator {
             position: absolute;
-            bottom: 20px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            color: rgba(255,255,255,0.85);
-            font-size: 12px;
-            background: rgba(0,0,0,0.5);
-            padding: 4px 10px;
-            border-radius: 4px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-            z-index: 250;
-            white-space: nowrap;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: rgba(255, 90, 90, 0.35);
+            border: 2px solid #ff5a5a;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 150;
+            backdrop-filter: blur(2px);
         }
-        #trash-label.visible { opacity: 1; }
+        #delete-mode-indicator .mi {
+            font-size: 24px;
+            color: #ff5a5a;
+        }
+        #delete-mode-indicator.visible { display: flex; }
     </style>
 </head>
 <body>
@@ -296,7 +284,6 @@
         <button id="start-btn"><span class="mi">play_arrow</span></button>
     </div>
 
-    <!-- Мобильное управление -->
     <div id="joystick-container">
         <div id="joystick-knob"></div>
     </div>
@@ -304,7 +291,6 @@
     <div id="fly-btn" class="action-btn"><span class="mi">flight</span></div>
     <div id="delete-mode-btn" class="action-btn"><span class="mi">delete</span></div>
 
-    <!-- Настройки -->
     <div id="settings-btn"><span class="mi">settings</span></div>
     <div id="settings-panel">
         <h3><span class="mi">tune</span></h3>
@@ -326,11 +312,9 @@
         </div>
     </div>
 
-    <!-- Корзина удаления -->
-    <div id="trash-btn"><span class="mi">delete</span></div>
-    <div id="trash-label">Нажмите на корзину, чтобы удалить</div>
-
     <div id="crosshair"></div>
+    <div id="delete-mode-indicator"><span class="mi">delete</span></div>
+    <div id="trash-bin"><span class="mi">delete_outline</span></div>
     <div id="loading">Загрузка модели...</div>
 
     <script type="importmap">
@@ -347,32 +331,24 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         let scene, camera, renderer;
-        let player;
-        let playerBody;
-        let statue;
+        let player, playerBody, statue;
         let mixer;
 
         const cam = {
-            yaw: 0,
-            pitch: 0,
+            yaw: 0, pitch: 0,
             sensitivity: 0.0022,
-            height: 1.7
         };
 
         const playerState = {
             velocity: new THREE.Vector3(),
-            onGround: true,
-            speed: 5.0,
-            jumpForce: 8.0,
-            gravity: 20.0,
-            flying: false,
-            flySpeed: 5.0,
-            scale: 1.0
+            onGround: true, speed: 5.0,
+            jumpForce: 8.0, gravity: 20.0,
+            flying: false, flySpeed: 5.0, scale: 1.0
         };
 
         const statueState = { scale: 1.0, baseScale: 1.0 };
 
-        const keys = { w:false, a:false, s:false, d:false, space:false, fly:false, sprint:false, up:false, down:false };
+        const keys = { w:false, a:false, s:false, d:false, space:false, fly:false, sprint:false, down:false };
         let joystickInput = { x:0, y:0 };
 
         let joystickActive = false, joystickTouchId = null;
@@ -394,6 +370,29 @@
 
         let isMouseLocked = false;
 
+        // --- Режим удаления ---
+        const deleteState = {
+            active: false,
+            hoveredMesh: null,          // текущий mesh под курсором
+            selectedMesh: null,         // mesh, на который наведена корзина (выделен)
+            lastActivityTime: 0,        // для авто-сброса через 3 мин
+            resetTimer: 3 * 60 * 1000,  // 3 минуты
+            originalEmissive: new Map(),// сохранённые emissive материалы
+        };
+
+        const trashBin = document.getElementById('trash-bin');
+        const trashIconEl = trashBin.querySelector('.mi');
+        const deleteModeIndicator = document.getElementById('delete-mode-indicator');
+
+        // Райкастер для определения mesh под курсором
+        const raycaster = new THREE.Raycaster();
+        const ndc = new THREE.Vector2();
+
+        // Центр корзины в пикселях (обновляем при показе)
+        let trashBinCenter = { x: 0, y: 0 };
+        let isTrashHot = false;   // наведена ли на корзину
+        let trashBinVisible = false;
+
         // --- Настройки ---
         const settingsPanel = document.getElementById('settings-panel');
         const settingsBtn = document.getElementById('settings-btn');
@@ -406,194 +405,6 @@
                 settingsPanel.style.display = 'none';
             }
         });
-
-        // ============================================================
-        //                    РЕЖИМ УДАЛЕНИЯ
-        // ============================================================
-        const deleteState = {
-            active: false,           // включён ли режим удаления
-            hovered: null,           // объект, на который смотрим/навели
-            hoveredMats: [],         // оригинальные материалы для восстановления
-            timeoutId: null,         // таймер 3 мин
-            timeoutMs: 3 * 60 * 1000 // 3 минуты
-        };
-
-        const trashBtn = document.getElementById('trash-btn');
-        const trashLabel = document.getElementById('trash-label');
-
-        // Raycaster для выбора объектов
-        const raycaster = new THREE.Raycaster();
-        const pointerNDC = new THREE.Vector2(0, 0); // по центру экрана (прицел)
-
-        // Вспомогательная функция: считается ли объект удаляемым
-        function isDeletable(obj) {
-            let o = obj;
-            while (o) {
-                if (o.userData && o.userData.deletable) return true;
-                o = o.parent;
-            }
-            return false;
-        }
-
-        // Найти «корневой» удаляемый объект (тот, у которого deletable=true)
-        function findDeletableRoot(obj) {
-            let o = obj;
-            let lastDeletable = null;
-            while (o) {
-                if (o.userData && o.userData.deletable) lastDeletable = o;
-                o = o.parent;
-            }
-            return lastDeletable;
-        }
-
-        // Подсветка объекта красным
-        function highlightObject(obj) {
-            clearHighlight();
-            if (!obj) return;
-            deleteState.hovered = obj;
-            deleteState.hoveredMats = [];
-            obj.traverse((node) => {
-                if (node.isMesh && node.material) {
-                    const mats = Array.isArray(node.material) ? node.material : [node.material];
-                    mats.forEach((mat) => {
-                        // сохраняем оригинальные параметры, чтобы вернуть
-                        const orig = {
-                            mat: mat,
-                            emissive: mat.emissive ? mat.emissive.clone() : null,
-                            emissiveIntensity: mat.emissiveIntensity !== undefined ? mat.emissiveIntensity : 1,
-                            color: mat.color ? mat.color.clone() : null
-                        };
-                        deleteState.hoveredMats.push(orig);
-
-                        if (mat.emissive) {
-                            mat.emissive.setHex(0xff2222);
-                            mat.emissiveIntensity = 0.9;
-                        } else if (mat.color) {
-                            mat.color.setHex(0xff3333);
-                        }
-                    });
-                }
-            });
-            trashBtn.classList.add('hot');
-        }
-
-        function clearHighlight() {
-            if (deleteState.hoveredMats.length) {
-                deleteState.hoveredMats.forEach((o) => {
-                    if (o.emissive) {
-                        o.mat.emissive.copy(o.emissive);
-                        o.mat.emissiveIntensity = o.emissiveIntensity;
-                    }
-                    if (o.color) o.mat.color.copy(o.color);
-                });
-                deleteState.hoveredMats = [];
-            }
-            deleteState.hovered = null;
-            trashBtn.classList.remove('hot');
-        }
-
-        // Войти в режим удаления (показать корзину)
-        function enterDeleteMode() {
-            if (deleteState.active) return;
-            deleteState.active = true;
-            trashBtn.classList.add('visible');
-            trashLabel.classList.add('visible');
-            resetDeleteTimeout();
-        }
-
-        // Выйти из режима удаления (спрятать корзину и снять подсветку)
-        function exitDeleteMode() {
-            if (!deleteState.active) return;
-            deleteState.active = false;
-            trashBtn.classList.remove('visible', 'hot');
-            trashLabel.classList.remove('visible');
-            clearHighlight();
-            clearTimeout(deleteState.timeoutId);
-            deleteState.timeoutId = null;
-        }
-
-        // Сброс таймера на 3 минуты
-        function resetDeleteTimeout() {
-            clearTimeout(deleteState.timeoutId);
-            deleteState.timeoutId = setTimeout(() => {
-                exitDeleteMode();
-            }, deleteState.timeoutMs);
-        }
-
-        // Обновить подсветку под прицелом
-        function updateDeleteHover() {
-            if (!deleteState.active) return;
-
-            raycaster.setFromCamera(pointerNDC, camera);
-            raycaster.far = 100;
-            const intersects = raycaster.intersectObjects(scene.children, true);
-
-            let target = null;
-            for (const hit of intersects) {
-                if (hit.object === playerBody) continue; // не подсвечиваем себя
-                if (hit.object.isLine || hit.object.isPoints) continue;
-                if (hit.object === trashBtn) continue;
-                // Проверяем, что это удаляемое (по цепочке родителей)
-                if (isDeletable(hit.object)) {
-                    target = findDeletableRoot(hit.object);
-                    break;
-                }
-            }
-
-            if (target !== deleteState.hovered) {
-                if (target) {
-                    highlightObject(target);
-                } else {
-                    clearHighlight();
-                }
-            }
-        }
-
-        // Удалить выбранный объект
-        function deleteHovered() {
-            if (!deleteState.hovered) return;
-            const obj = deleteState.hovered;
-            clearHighlight();
-            if (obj.parent) obj.parent.remove(obj);
-            // Освобождаем ресурсы
-            obj.traverse((node) => {
-                if (node.isMesh) {
-                    if (node.geometry) node.geometry.dispose();
-                    if (node.material) {
-                        const mats = Array.isArray(node.material) ? node.material : [node.material];
-                        mats.forEach(m => m.dispose());
-                    }
-                }
-            });
-            // Проверяем — если удалили статую, обнулим ссылку
-            if (obj === statue || (statue && obj.children && obj.children.includes(statue))) {
-                statue = null;
-            }
-            // После удаления остаёмся в режиме, но корзина снова обычная
-            resetDeleteTimeout();
-        }
-
-        // Клик по корзине — удалить
-        trashBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            if (deleteState.hovered) {
-                deleteHovered();
-            } else {
-                // Если ничего не наведено — просто выходим
-                exitDeleteMode();
-            }
-        });
-        trashBtn.addEventListener('touchstart', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            if (deleteState.hovered) deleteHovered();
-            else exitDeleteMode();
-        }, { passive: false });
-
-        // ============================================================
-        //                   КОНЕЦ РЕЖИМА УДАЛЕНИЯ
-        // ============================================================
 
         function initScene() {
             scene = new THREE.Scene();
@@ -632,29 +443,24 @@
             const platform = new THREE.Mesh(platformGeo, platformMat);
             platform.position.y = -0.25;
             platform.receiveShadow = true;
-            // Платформа НЕ удаляемая — не помечаем deletable
             scene.add(platform);
 
             const grid = new THREE.GridHelper(mapSize, 40, 0x555555, 0x505050);
             grid.position.y = 0.005;
             scene.add(grid);
 
-            // Колонны — УДАЛЯЕМЫЕ
             const pillarMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.85 });
             const pillarGeo = new THREE.BoxGeometry(2, 6, 2);
             [[30,30],[-30,30],[30,-30],[-30,-30]].forEach(([x,z]) => {
-                const p = new THREE.Mesh(pillarGeo.clone(), pillarMat.clone());
+                const p = new THREE.Mesh(pillarGeo, pillarMat);
                 p.position.set(x, 3, z);
                 p.castShadow = true;
                 p.receiveShadow = true;
-                p.userData.deletable = true;
                 scene.add(p);
             });
 
-            // Игрок
             player = new THREE.Group();
             player.position.set(0, 0, 8);
-            player.userData.deletable = false;
             scene.add(player);
 
             const bodyMat = new THREE.MeshStandardMaterial({ color: 0x3a7bd5, roughness: 0.6 });
@@ -662,48 +468,66 @@
             playerBody.position.y = 0.8;
             playerBody.castShadow = true;
             playerBody.receiveShadow = true;
-            playerBody.userData.deletable = false;
             player.add(playerBody);
 
-            // Загрузка статуи
+            // --- Статуя fexa_bikini ---
             const loader = new GLTFLoader();
             loader.load(
                 'fexa_bikini.glb',
                 (gltf) => {
-                    const modelRoot = gltf.scene;
-                    modelRoot.traverse((node) => {
+                    statue = gltf.scene;
+                    statue.traverse((node) => {
                         if (node.isMesh) {
                             node.castShadow = true;
                             node.receiveShadow = true;
+                            // сохраняем оригинальный emissive
+                            if (node.material) {
+                                if (Array.isArray(node.material)) {
+                                    node.material.forEach(m => {
+                                        if (!deleteState.originalEmissive.has(m)) {
+                                            deleteState.originalEmissive.set(m, {
+                                                emissive: m.emissive ? m.emissive.clone() : new THREE.Color(0x000000),
+                                                emissiveIntensity: m.emissiveIntensity !== undefined ? m.emissiveIntensity : 1
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    if (!deleteState.originalEmissive.has(node.material)) {
+                                        deleteState.originalEmissive.set(node.material, {
+                                            emissive: node.material.emissive ? node.material.emissive.clone() : new THREE.Color(0x000000),
+                                            emissiveIntensity: node.material.emissiveIntensity !== undefined ? node.material.emissiveIntensity : 1
+                                        });
+                                    }
+                                }
+                            }
                         }
                     });
 
-                    const box = new THREE.Box3().setFromObject(modelRoot);
+                    const box = new THREE.Box3().setFromObject(statue);
                     const size = new THREE.Vector3();
                     box.getSize(size);
                     const targetHeight = 4;
                     const autoScale = targetHeight / (size.y || 1);
                     statueState.baseScale = autoScale;
                     statueState.scale = 1.0;
-                    modelRoot.scale.setScalar(autoScale);
+                    statue.scale.setScalar(autoScale);
 
-                    const box2 = new THREE.Box3().setFromObject(modelRoot);
+                    const box2 = new THREE.Box3().setFromObject(statue);
                     const center = new THREE.Vector3();
                     box2.getCenter(center);
-                    modelRoot.position.x = -center.x;
-                    modelRoot.position.z = -center.z;
-                    modelRoot.position.y = -box2.min.y;
+                    statue.position.x = -center.x;
+                    statue.position.z = -center.z;
+                    statue.position.y = -box2.min.y;
 
                     const statueGroup = new THREE.Group();
                     statueGroup.position.set(0, 0, -12);
-                    statueGroup.add(modelRoot);
-                    // Статуя — УДАЛЯЕМАЯ
-                    statueGroup.userData.deletable = true;
+                    statueGroup.add(statue);
+                    statueGroup.name = 'statueGroup';
                     scene.add(statueGroup);
                     statue = statueGroup;
 
                     if (gltf.animations && gltf.animations.length > 0) {
-                        mixer = new THREE.AnimationMixer(modelRoot);
+                        mixer = new THREE.AnimationMixer(statue.children[0]);
                     }
 
                     document.getElementById('loading').style.display = 'none';
@@ -722,6 +546,8 @@
 
             setupSettings();
             setupControls();
+            setupDeleteMode();
+
             window.addEventListener('resize', onWindowResize);
         }
 
@@ -734,7 +560,6 @@
                 playerState.scale = v;
                 player.scale.setScalar(v);
             });
-
             const statueSizeInput = document.getElementById('statue-size');
             const statueSizeVal = document.getElementById('statue-size-val');
             statueSizeInput.addEventListener('input', () => {
@@ -743,7 +568,6 @@
                 statueState.scale = v;
                 if (statue) statue.scale.setScalar(statueState.baseScale * v);
             });
-
             const speedInput = document.getElementById('speed');
             const speedVal = document.getElementById('speed-val');
             speedInput.addEventListener('input', () => {
@@ -751,7 +575,6 @@
                 speedVal.textContent = v.toFixed(1);
                 playerState.speed = v;
             });
-
             const flySpeedInput = document.getElementById('fly-speed');
             const flySpeedVal = document.getElementById('fly-speed-val');
             flySpeedInput.addEventListener('input', () => {
@@ -772,8 +595,11 @@
                     case 'KeyF': keys.fly = true; e.preventDefault(); break;
                     case 'ShiftLeft':
                     case 'ShiftRight': keys.sprint = true; break;
-                    case 'KeyE': keys.up = true; break;
                     case 'KeyQ': keys.down = true; break;
+                    case 'KeyM':
+                        e.preventDefault();
+                        toggleDeleteMode();
+                        break;
                 }
             });
             window.addEventListener('keyup', (e) => {
@@ -786,132 +612,37 @@
                     case 'KeyF': keys.fly = false; break;
                     case 'ShiftLeft':
                     case 'ShiftRight': keys.sprint = false; break;
-                    case 'KeyE': keys.up = false; break;
                     case 'KeyQ': keys.down = false; break;
                 }
             });
 
             const canvas = renderer.domElement;
-
-            // --- ПК: pointer lock ---
-            canvas.addEventListener('click', (e) => {
-                // Если активен режим удаления — клик обрабатывается отдельно ниже
-                if (deleteState.active) return;
-                if (!isMouseLocked) canvas.requestPointerLock();
+            canvas.addEventListener('click', () => {
+                if (!isMouseLocked && !deleteState.active) {
+                    canvas.requestPointerLock();
+                }
             });
             document.addEventListener('pointerlockchange', () => {
                 isMouseLocked = (document.pointerLockElement === canvas);
             });
             document.addEventListener('mousemove', (e) => {
-                if (!isMouseLocked) {
-                    // Если режим удаления — обновляем ховер по курсору
-                    if (deleteState.active) {
-                        pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
-                        pointerNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
-                        updateDeleteHover();
-                    }
-                    return;
-                }
+                if (!isMouseLocked) return;
                 cam.yaw -= e.movementX * cam.sensitivity;
                 cam.pitch -= e.movementY * cam.sensitivity;
                 cam.pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, cam.pitch));
-                resetDeleteTimeout();
             });
 
-            // ПКМ — вход в режим удаления (даже в pointer lock)
-            document.addEventListener('mousedown', (e) => {
-                if (e.button === 2) { // правая
-                    e.preventDefault();
-                    if (!deleteState.active) {
-                        enterDeleteMode();
-                        // Обновляем ховер: в pointer lock прицел по центру
-                        pointerNDC.set(0, 0);
-                        updateDeleteHover();
-                    } else {
-                        // Если уже в режиме — клик по объекту под прицелом
-                        pointerNDC.set(0, 0);
-                        updateDeleteHover();
-                        if (deleteState.hovered) {
-                            // Ничего не удаляем сразу — ждём клика по корзине
-                            // Просто подсветили (уже подсвечено)
-                        }
-                    }
-                    resetDeleteTimeout();
-                }
-            });
-            // Блокируем контекстное меню
-            document.addEventListener('contextmenu', (e) => {
-                // разрешаем только вне игры (на UI)
-                if (e.target === canvas) e.preventDefault();
-            });
-
-            // ЛКМ — если режим удаления активен и не в pointer lock — обновляем ховер и вход
-            canvas.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
-                if (deleteState.active) {
-                    // В режиме удаления: клик по объекту под курсором
-                    if (!isMouseLocked) {
-                        pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
-                        pointerNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
-                        updateDeleteHover();
-                    } else {
-                        pointerNDC.set(0, 0);
-                        updateDeleteHover();
-                    }
-                    resetDeleteTimeout();
-                    return;
-                }
-                // Если не в режиме — проверяем, попали ли по удаляемому объекту (при клике ЛКМ)
-                // В pointer lock клик ЛКМ обычно = захват. Но если уже захвачено — попробуем войти в режим.
-                // Для простоты: ЛКМ по объекту (вне pointer lock) — сразу вход в режим удаления
-                if (!isMouseLocked) {
-                    const rect = canvas.getBoundingClientRect();
-                    pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-                    pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-                    raycaster.setFromCamera(pointerNDC, camera);
-                    raycaster.far = 100;
-                    const hits = raycaster.intersectObjects(scene.children, true);
-                    for (const h of hits) {
-                        if (h.object === playerBody) continue;
-                        if (isDeletable(h.object)) {
-                            enterDeleteMode();
-                            pointerNDC.set(
-                                ((e.clientX - rect.left) / rect.width) * 2 - 1,
-                                -((e.clientY - rect.top) / rect.height) * 2 + 1
-                            );
-                            updateDeleteHover();
-                            return;
-                        }
-                    }
-                }
-            });
-
-            // --- Мобильные касания ---
+            // Касания
             canvas.addEventListener('touchstart', (e) => {
                 for (let i = 0; i < e.changedTouches.length; i++) {
                     const t = e.changedTouches[i];
                     activeTouches.set(t.identifier, { x: t.clientX, y: t.clientY });
                 }
-
-                // Если режим удаления активен — касание = выбор объекта под пальцем
-                if (deleteState.active) {
-                    for (let i = 0; i < e.changedTouches.length; i++) {
-                        const t = e.changedTouches[i];
-                        pointerNDC.x = (t.clientX / window.innerWidth) * 2 - 1;
-                        pointerNDC.y = -(t.clientY / window.innerHeight) * 2 + 1;
-                        updateDeleteHover();
-                        resetDeleteTimeout();
-                        e.preventDefault();
-                    }
-                    return;
-                }
-
                 for (let i = 0; i < e.changedTouches.length; i++) {
                     const t = e.changedTouches[i];
                     const inJoystickZone = t.clientX < window.innerWidth * 0.5 &&
                                            t.clientY > window.innerHeight * 0.45;
-
-                    if (!joystickActive && inJoystickZone) {
+                    if (!joystickActive && inJoystickZone && !deleteState.active) {
                         joystickActive = true;
                         joystickTouchId = t.identifier;
                         joystickContainer.style.display = 'block';
@@ -938,7 +669,6 @@
                     if (activeTouches.has(t.identifier)) {
                         activeTouches.set(t.identifier, { x: t.clientX, y: t.clientY });
                     }
-
                     if (joystickActive && t.identifier === joystickTouchId) {
                         let dx = t.clientX - joystickCenter.x;
                         let dy = t.clientY - joystickCenter.y;
@@ -952,7 +682,6 @@
                         joystickKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
                         e.preventDefault();
                     }
-
                     if (t.identifier === cameraTouchId) {
                         const dx = t.clientX - lastCameraTouchX;
                         const dy = t.clientY - lastCameraTouchY;
@@ -986,7 +715,6 @@
             canvas.addEventListener('touchend', endTouch);
             canvas.addEventListener('touchcancel', endTouch);
 
-            // --- Кнопки ---
             const bindBtn = (el, onDown, onUp) => {
                 el.addEventListener('touchstart', (e) => { onDown(); e.preventDefault(); e.stopPropagation(); }, { passive: false });
                 el.addEventListener('touchend', (e) => { onUp(); e.preventDefault(); e.stopPropagation(); }, { passive: false });
@@ -995,7 +723,6 @@
                 el.addEventListener('mouseup', (e) => { onUp(); e.preventDefault(); });
                 el.addEventListener('mouseleave', () => onUp());
             };
-
             bindBtn(jumpBtn, () => jumpBtnPressed = true, () => jumpBtnPressed = false);
 
             const toggleFly = () => {
@@ -1006,32 +733,8 @@
             flyBtn.addEventListener('touchstart', (e) => { toggleFly(); e.preventDefault(); e.stopPropagation(); }, { passive: false });
             flyBtn.addEventListener('mousedown', (e) => { toggleFly(); e.preventDefault(); });
 
-            // Кнопка режима удаления на мобильном — переключатель
-            deleteModeBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (deleteState.active) {
-                    exitDeleteMode();
-                    deleteModeBtn.classList.remove('active');
-                } else {
-                    enterDeleteMode();
-                    deleteModeBtn.classList.add('active');
-                    pointerNDC.set(0, 0); // ховер по центру
-                    updateDeleteHover();
-                }
-            }, { passive: false });
-            deleteModeBtn.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                if (deleteState.active) {
-                    exitDeleteMode();
-                    deleteModeBtn.classList.remove('active');
-                } else {
-                    enterDeleteMode();
-                    deleteModeBtn.classList.add('active');
-                    pointerNDC.set(0, 0);
-                    updateDeleteHover();
-                }
-            });
+            deleteModeBtn.addEventListener('touchstart', (e) => { toggleDeleteMode(); e.preventDefault(); e.stopPropagation(); }, { passive: false });
+            deleteModeBtn.addEventListener('mousedown', (e) => { toggleDeleteMode(); e.preventDefault(); });
         }
 
         function onWindowResize() {
@@ -1041,20 +744,11 @@
         }
 
         const clock = new THREE.Clock();
-
         function animate() {
             requestAnimationFrame(animate);
             const dt = Math.min(clock.getDelta(), 0.1);
             updatePlayer(dt);
-
-            // В режиме удаления: обновляем подсветку под прицелом (если pointer lock)
-            if (deleteState.active) {
-                if (isMouseLocked) {
-                    pointerNDC.set(0, 0);
-                    updateDeleteHover();
-                }
-            }
-
+            if (deleteState.active) updateDeleteMode();
             renderer.render(scene, camera);
         }
 
@@ -1072,16 +766,13 @@
             if (keys.s) f -= 1;
             if (keys.d) r += 1;
             if (keys.a) r -= 1;
-
             if (Math.abs(joystickInput.y) > 0.1) f += -joystickInput.y;
             if (Math.abs(joystickInput.x) > 0.1) r += joystickInput.x;
-
             const inputLen = Math.sqrt(f*f + r*r);
             if (inputLen > 1) { f /= inputLen; r /= inputLen; }
 
             _forward.set(-Math.sin(cam.yaw), 0, -Math.cos(cam.yaw));
             _right.set(Math.cos(cam.yaw), 0, -Math.sin(cam.yaw));
-
             _move.set(0, 0, 0);
             _move.addScaledVector(_forward, f);
             _move.addScaledVector(_right, r);
@@ -1093,7 +784,6 @@
                 const flySpeed = playerState.flySpeed * sprintMul;
                 player.position.x += _move.x * flySpeed * dt;
                 player.position.z += _move.z * flySpeed * dt;
-
                 let vertical = 0;
                 if (keys.space || jumpBtnPressed) vertical += 1;
                 if (keys.down) vertical -= 1;
@@ -1103,15 +793,12 @@
                 const speed = playerState.speed * sprintMul;
                 player.position.x += _move.x * speed * dt;
                 player.position.z += _move.z * speed * dt;
-
                 if ((keys.space || jumpBtnPressed) && playerState.onGround) {
                     playerState.velocity.y = playerState.jumpForce;
                     playerState.onGround = false;
                 }
-
                 playerState.velocity.y -= playerState.gravity * dt;
                 player.position.y += playerState.velocity.y * dt;
-
                 if (player.position.y <= 0) {
                     player.position.y = 0;
                     playerState.velocity.y = 0;
@@ -1124,12 +811,7 @@
             player.position.z = Math.max(-limit, Math.min(limit, player.position.z));
 
             const eyeHeight = 1.6 * playerState.scale;
-            camera.position.set(
-                player.position.x,
-                player.position.y + eyeHeight,
-                player.position.z
-            );
-
+            camera.position.set(player.position.x, player.position.y + eyeHeight, player.position.z);
             const dir = new THREE.Vector3(
                 -Math.sin(cam.yaw) * Math.cos(cam.pitch),
                 Math.sin(cam.pitch),
@@ -1140,6 +822,308 @@
             if (mixer) mixer.update(dt);
         }
 
+        // ==================== РЕЖИМ УДАЛЕНИЯ ====================
+
+        function toggleDeleteMode() {
+            deleteState.active = !deleteState.active;
+            deleteModeBtn.classList.toggle('active', deleteState.active);
+            deleteModeIndicator.classList.toggle('visible', deleteState.active);
+
+            if (deleteState.active) {
+                // Выходим из pointer lock, чтобы курсор был свободен
+                if (document.pointerLockElement) document.exitPointerLock();
+                // Начинаем отсчёт авто-сброса
+                deleteState.lastActivityTime = performance.now();
+            } else {
+                // Снимаем выделение и прячем корзину
+                clearHover();
+                clearSelected();
+                hideTrashBin(true);
+                if (!isMouseLocked) {
+                    // Ничего — пользователь сам кликнет для захвата мыши при желании
+                }
+            }
+        }
+
+        function clearHover() {
+            if (deleteState.hoveredMesh) {
+                restoreMeshMaterial(deleteState.hoveredMesh);
+                deleteState.hoveredMesh = null;
+            }
+        }
+
+        function clearSelected() {
+            if (deleteState.selectedMesh) {
+                // Если выбранный ≠ наведённый (уже восстановлен), восстановим
+                if (deleteState.selectedMesh !== deleteState.hoveredMesh) {
+                    restoreMeshMaterial(deleteState.selectedMesh);
+                }
+                deleteState.selectedMesh = null;
+            }
+            trashBin.classList.remove('hot');
+            isTrashHot = false;
+            trashIconEl.textContent = 'delete_outline';
+        }
+
+        function restoreMeshMaterial(mesh) {
+            if (!mesh || !mesh.material) return;
+            const restore = (m) => {
+                const orig = deleteState.originalEmissive.get(m);
+                if (orig) {
+                    if (m.emissive) m.emissive.copy(orig.emissive);
+                    if (m.emissiveIntensity !== undefined) m.emissiveIntensity = orig.emissiveIntensity;
+                }
+            };
+            if (Array.isArray(mesh.material)) {
+                mesh.material.forEach(restore);
+            } else {
+                restore(mesh.material);
+            }
+        }
+
+        function highlightMesh(mesh, color, intensity) {
+            if (!mesh || !mesh.material) return;
+            const apply = (m) => {
+                if (!m.emissive) m.emissive = new THREE.Color(0x000000);
+                // убедимся, что материал поддерживает emissive (MeshStandardMaterial, MeshPhongMaterial)
+                m.emissive.set(color);
+                m.emissiveIntensity = intensity;
+            };
+            if (Array.isArray(mesh.material)) {
+                mesh.material.forEach(apply);
+            } else {
+                apply(mesh.material);
+            }
+        }
+
+        function showTrashBin(screenX, screenY) {
+            trashBinVisible = true;
+            trashBin.classList.add('visible');
+            // Ставим чуть в стороне от курсора
+            const offset = 80;
+            let x = screenX + offset;
+            let y = screenY - offset;
+            // Не выходим за края
+            x = Math.max(70, Math.min(window.innerWidth - 70, x));
+            y = Math.max(70, Math.min(window.innerHeight - 70, y));
+            trashBin.style.left = x + 'px';
+            trashBin.style.top = y + 'px';
+            trashBin.style.right = 'auto';
+            trashBin.style.bottom = 'auto';
+            const rect = trashBin.getBoundingClientRect();
+            trashBinCenter.x = rect.left + rect.width / 2;
+            trashBinCenter.y = rect.top + rect.height / 2;
+        }
+
+        function hideTrashBin(instant = false) {
+            trashBinVisible = false;
+            if (instant) {
+                trashBin.classList.remove('visible');
+            } else {
+                trashBin.classList.remove('visible');
+            }
+            trashBin.classList.remove('hot');
+            isTrashHot = false;
+            trashIconEl.textContent = 'delete_outline';
+        }
+
+        function isPointInTrash(x, y) {
+            const halfSize = 40; // увеличенная зона захвата
+            return Math.abs(x - trashBinCenter.x) < halfSize &&
+                   Math.abs(y - trashBinCenter.y) < halfSize;
+        }
+
+        // Raycast по статуе
+        function raycastStatue(clientX, clientY) {
+            if (!statue) return null;
+            ndc.x = (clientX / window.innerWidth) * 2 - 1;
+            ndc.y = -(clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(ndc, camera);
+            // Ищем только среди детей статуи
+            const intersects = raycaster.intersectObject(statue, true);
+            if (intersects.length === 0) return null;
+            // Возвращаем первый mesh (не группу)
+            for (const hit of intersects) {
+                if (hit.object.isMesh) return hit.object;
+            }
+            return null;
+        }
+
+        function updateDeleteMode() {
+            // Авто-сброс через 3 минуты бездействия
+            const now = performance.now();
+            if (deleteState.selectedMesh && (now - deleteState.lastActivityTime > deleteState.resetTimer)) {
+                // плавный сброс
+                clearHover();
+                clearSelected();
+                hideTrashBin();
+                deleteState.lastActivityTime = now;
+            }
+
+            // Если выделен mesh и курсор на корзине — корзина красная
+            if (isTrashHot) {
+                trashIconEl.textContent = 'delete_forever';
+            } else {
+                trashIconEl.textContent = 'delete_outline';
+            }
+        }
+
+        // --- Обработка движения мыши для режима удаления (ПК) ---
+        document.addEventListener('mousemove', (e) => {
+            if (!deleteState.active) return;
+            if (isMouseLocked) return; // в pointer lock режим удаления работать не должен, но на всякий
+
+            const mx = e.clientX, my = e.clientY;
+
+            // 1. Проверяем, наведён ли на корзину
+            const wasHot = isTrashHot;
+            isTrashHot = trashBinVisible && isPointInTrash(mx, my);
+            if (isTrashHot !== wasHot) {
+                trashBin.classList.toggle('hot', isTrashHot);
+                deleteState.lastActivityTime = performance.now();
+            }
+
+            // 2. Если наведён на корзину — мышь на статуе игнорируем, чтобы не сбрасывать выделение
+            if (isTrashHot) {
+                // Оставляем выделение, ничего не меняем
+                return;
+            }
+
+            // 3. Raycast по статуе
+            const hitMesh = raycastStatue(mx, my);
+
+            if (hitMesh !== deleteState.hoveredMesh) {
+                // Сброс старого
+                if (deleteState.hoveredMesh && deleteState.hoveredMesh !== deleteState.selectedMesh) {
+                    restoreMeshMaterial(deleteState.hoveredMesh);
+                }
+                deleteState.hoveredMesh = hitMesh;
+
+                if (hitMesh) {
+                    highlightMesh(hitMesh, 0xffaa33, 1.5);
+                    // Показываем корзину рядом с курсором
+                    if (!deleteState.selectedMesh) {
+                        deleteState.selectedMesh = hitMesh;
+                        showTrashBin(mx, my);
+                        trashIconEl.textContent = 'delete_outline';
+                    } else if (hitMesh !== deleteState.selectedMesh) {
+                        // Меняем выбранный объект
+                        restoreMeshMaterial(deleteState.selectedMesh);
+                        deleteState.selectedMesh = hitMesh;
+                        showTrashBin(mx, my);
+                    }
+                    deleteState.lastActivityTime = performance.now();
+                } else {
+                    // Ничего не нашли — прячем корзину, снимаем выделение (плавно)
+                    if (deleteState.selectedMesh) {
+                        // Не снимаем сразу выделение — оставим на случай, если пользователь вернётся
+                        // Но скроем корзину
+                    }
+                    // Если не наведено ни на что и не на корзину — плавно убираем
+                    if (!isTrashHot) {
+                        clearSelected();
+                        hideTrashBin();
+                    }
+                }
+            }
+
+            // 4. Обновляем позицию корзины, если она видима
+            if (trashBinVisible) {
+                const offset = 80;
+                let x = mx + offset;
+                let y = my - offset;
+                x = Math.max(70, Math.min(window.innerWidth - 70, x));
+                y = Math.max(70, Math.min(window.innerHeight - 70, y));
+                trashBin.style.left = x + 'px';
+                trashBin.style.top = y + 'px';
+                const rect = trashBin.getBoundingClientRect();
+                trashBinCenter.x = rect.left + rect.width / 2;
+                trashBinCenter.y = rect.top + rect.height / 2;
+            }
+        });
+
+        // --- Клик по корзине = удаление ---
+        trashBin.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!deleteState.active) return;
+            if (!isTrashHot) return;
+            if (!deleteState.selectedMesh) return;
+            performDelete(deleteState.selectedMesh);
+        });
+
+        // --- Клик по статуе (ПК) — выделение (если не на корзине) ---
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            if (!deleteState.active) return;
+            if (e.button !== 0) return;
+            if (isTrashHot) return;
+
+            const hit = raycastStatue(e.clientX, e.clientY);
+            if (hit) {
+                // Переключаем выбранный
+                if (deleteState.selectedMesh && deleteState.selectedMesh !== hit) {
+                    restoreMeshMaterial(deleteState.selectedMesh);
+                }
+                deleteState.selectedMesh = hit;
+                highlightMesh(hit, 0xffaa33, 1.5);
+                showTrashBin(e.clientX, e.clientY);
+                deleteState.lastActivityTime = performance.now();
+            }
+        });
+
+        // --- Мобильное: тапы ---
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            if (!deleteState.active) return;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const t = e.changedTouches[i];
+                const hit = raycastStatue(t.clientX, t.clientY);
+                if (hit) {
+                    if (deleteState.selectedMesh && deleteState.selectedMesh !== hit) {
+                        restoreMeshMaterial(deleteState.selectedMesh);
+                    }
+                    deleteState.selectedMesh = hit;
+                    highlightMesh(hit, 0xffaa33, 1.5);
+                    showTrashBin(t.clientX, t.clientY);
+                    deleteState.lastActivityTime = performance.now();
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+        }, { passive: false });
+
+        // На мобильном — тап по корзине
+        trashBin.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!deleteState.active) return;
+            if (!deleteState.selectedMesh) return;
+            performDelete(deleteState.selectedMesh);
+        }, { passive: false });
+
+        function performDelete(mesh) {
+            if (!mesh || !mesh.parent) return;
+
+            // Снимаем выделение
+            restoreMeshMaterial(mesh);
+
+            // Удаляем из сцены
+            mesh.parent.remove(mesh);
+
+            // Очищаем ссылки
+            if (deleteState.hoveredMesh === mesh) deleteState.hoveredMesh = null;
+            if (deleteState.selectedMesh === mesh) deleteState.selectedMesh = null;
+
+            // Прячем корзину
+            hideTrashBin();
+
+            // Сбрасываем таймер
+            deleteState.lastActivityTime = performance.now();
+
+            // Не удаляем всю статую целиком — только части, которые юзер выбрал.
+            // Если удалили все части — статуя останется пустой группой (её не видно).
+        }
+
+        // --- Старт ---
         document.getElementById('start-btn').addEventListener('click', async () => {
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('crosshair').style.display = 'block';
